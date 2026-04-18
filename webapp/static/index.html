@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EEG Clipper Webapp</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="loading-overlay" id="loading-overlay" aria-hidden="true">
+      <div class="loading-card" role="status" aria-live="polite">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <p class="loading-title">Working on your dataset</p>
+        <p class="loading-message" id="loading-message">Please wait...</p>
+        <div class="loading-progress" aria-hidden="true">
+          <div class="loading-progress-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-shell">
+      <header class="hero">
+        <p class="eyebrow">EEG Processing Workspace</p>
+        <div class="hero-copy">
+          <div>
+            <h1>Clip EEG recordings in the browser</h1>
+            <p>
+              This webapp reproduces the desktop workflow: open EEG data, inspect stacked channels,
+              drag across time spans, and export each clipped region as project-compatible JSON.
+            </p>
+          </div>
+          <div class="hero-status">
+            <span class="status-pill" id="backend-status">Checking backend</span>
+            <span class="status-pill muted" id="dataset-status">No dataset loaded</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="toolbar-card">
+        <div class="artifact-button-row">
+          <button class="toolbar-button primary" id="load-json-btn">Load JSON</button>
+          <button class="toolbar-button primary" id="preview-edf-btn">Open EDF</button>
+          <button class="toolbar-button" id="export-edf-json-btn">Export EDF JSON</button>
+          <button class="toolbar-button" id="export-edf-segments-btn">Export EDF Segments</button>
+          <button class="toolbar-button success" id="export-clips-btn">Export Clips</button>
+          <button class="toolbar-button warning" id="clear-selection-btn">Clear Selections</button>
+          <input type="file" id="json-input" accept=".json,application/json" hidden />
+          <input type="file" id="edf-input" accept=".edf" hidden />
+        </div>
+
+        <div class="button-row">
+          <label class="control-chip">
+            <span>Visible Channels</span>
+            <select id="visible-count-select">
+              <option value="4">4</option>
+              <option value="6" selected>6</option>
+              <option value="8">8</option>
+              <option value="10">10</option>
+            </select>
+          </label>
+          <label class="control-chip">
+            <span>Window</span>
+            <select id="window-seconds-select">
+              <option value="5">5 s</option>
+              <option value="10" selected>10 s</option>
+              <option value="20">20 s</option>
+              <option value="30">30 s</option>
+              <option value="60">60 s</option>
+            </select>
+          </label>
+          <label class="control-chip">
+            <span>Scale</span>
+            <select id="amplitude-scale-select">
+              <option value="0.5">0.5x</option>
+              <option value="1" selected>1x</option>
+              <option value="2">2x</option>
+              <option value="4">4x</option>
+            </select>
+          </label>
+          <label class="control-chip">
+            <span>Row Spacing</span>
+            <select id="row-spacing-select">
+              <option value="80">Compact</option>
+              <option value="110" selected>Normal</option>
+              <option value="140">Wide</option>
+            </select>
+          </label>
+          <label class="control-chip">
+            <span>EDF Segments</span>
+            <select id="segment-duration-select">
+              <option value="30">30 s</option>
+              <option value="60" selected>60 s</option>
+              <option value="120">120 s</option>
+              <option value="300">300 s</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="workspace-grid">
+        <div class="viewer-card">
+          <div class="viewer-header">
+            <div>
+              <h2>Waveform Viewer</h2>
+              <p>Drag on the graph to add a clipping region. Use the sliders to pan through time and channels.</p>
+            </div>
+            <div class="viewer-metrics">
+              <span id="time-window-label">0.00s - 0.00s</span>
+              <span id="channel-window-label">Channels 0-0</span>
+            </div>
+          </div>
+          <div class="viewer-canvas-wrap">
+            <canvas id="eeg-canvas" width="1400" height="760"></canvas>
+          </div>
+          <div class="slider-stack">
+            <label>
+              <span>Time position</span>
+              <input id="time-scroll" type="range" min="0" max="0" step="0.01" value="0" />
+            </label>
+            <label>
+              <span>Channel position</span>
+              <input id="channel-scroll" type="range" min="0" max="0" step="1" value="0" />
+            </label>
+          </div>
+        </div>
+
+        <aside class="sidebar-card">
+          <section>
+            <h3>Dataset</h3>
+            <dl class="metadata-grid" id="metadata-grid">
+              <div>
+                <dt>File</dt>
+                <dd>None</dd>
+              </div>
+              <div>
+                <dt>Channels</dt>
+                <dd>0</dd>
+              </div>
+              <div>
+                <dt>Duration</dt>
+                <dd>0.00 s</dd>
+              </div>
+              <div>
+                <dt>Sampling Rate</dt>
+                <dd>0 Hz</dd>
+              </div>
+              <div>
+                <dt>Events</dt>
+                <dd>0</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section>
+            <div class="section-head">
+              <h3>Selections</h3>
+              <span class="counter-pill" id="selection-count">0</span>
+            </div>
+            <div class="selection-list" id="selection-list">
+              <p class="empty-state">No clipping regions selected.</p>
+            </div>
+          </section>
+
+          <section>
+            <h3>Activity</h3>
+            <div class="activity-log" id="activity-log"></div>
+          </section>
+        </aside>
+      </section>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+  </html>
