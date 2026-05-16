@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EEG Clipper Webapp</title>
-    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260516a" />
   </head>
   <body>
     <div class="loading-overlay" id="loading-overlay" aria-hidden="true">
@@ -78,6 +78,12 @@
             </select>
           </label>
           <label class="control-chip">
+            <span>Montage</span>
+            <select id="montage-select">
+              <option value="raw_referential" selected>Raw Referential</option>
+            </select>
+          </label>
+          <label class="control-chip">
             <span>Row Spacing</span>
             <select id="row-spacing-select">
               <option value="80">Compact</option>
@@ -102,25 +108,35 @@
           <div class="viewer-header">
             <div>
               <h2>Waveform Viewer</h2>
-              <p>Drag on the graph to add a clipping region. Use the sliders to pan through time and channels.</p>
+              <p>Drag on the graph to add a clipping region. Use page controls to move through time windows and channel checkboxes to filter rows.</p>
             </div>
             <div class="viewer-metrics">
               <span id="time-window-label">0.00s - 0.00s</span>
               <span id="channel-window-label">Channels 0-0</span>
             </div>
           </div>
-          <div class="viewer-canvas-wrap">
-            <canvas id="eeg-canvas" width="1400" height="760"></canvas>
+          <div class="page-controls" id="page-controls" aria-label="Time pages">
+            <button class="page-button" id="page-prev-btn" type="button">Previous Page</button>
+            <span class="page-indicator" id="page-indicator">Page 1 / 1</span>
+            <button class="page-button" id="page-next-btn" type="button">Next Page</button>
+            <span class="page-shortcuts">Shortcuts: A / D / Left Arrow / Right Arrow</span>
           </div>
-          <div class="slider-stack">
-            <label>
-              <span>Time position</span>
-              <input id="time-scroll" type="range" min="0" max="0" step="0.01" value="0" />
-            </label>
-            <label>
-              <span>Channel position</span>
-              <input id="channel-scroll" type="range" min="0" max="0" step="1" value="0" />
-            </label>
+          <div class="viewer-canvas-row">
+            <div class="channel-filter-panel" aria-label="Channel filter">
+              <div class="channel-filter-head">
+                <strong>Channels</strong>
+                <label class="channel-filter-all">
+                  <input id="channel-filter-all" type="checkbox" checked />
+                  <span>All</span>
+                </label>
+              </div>
+              <div class="channel-filter-list" id="channel-filter-list">
+                <p class="empty-state">Load a dataset to choose channels.</p>
+              </div>
+            </div>
+            <div class="viewer-canvas-wrap">
+              <canvas id="eeg-canvas" width="1400" height="760"></canvas>
+            </div>
           </div>
         </div>
 
@@ -169,6 +185,9 @@
       </section>
     </div>
 
-    <script src="/static/app.js"></script>
+    <div id="selection-hover-legend" class="selection-hover-legend" aria-hidden="true"></div>
+
+    <script src="/static/montage_mappings.js?v=20260516a"></script>
+    <script src="/static/app.js?v=20260516b"></script>
   </body>
   </html>

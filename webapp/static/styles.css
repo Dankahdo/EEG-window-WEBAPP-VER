@@ -30,6 +30,28 @@ body {
     linear-gradient(180deg, #f7fafc 0%, var(--bg) 100%);
 }
 
+.selection-hover-legend {
+  position: fixed;
+  z-index: 1200;
+  max-width: min(320px, 70vw);
+  border-radius: 10px;
+  border: 1px solid rgba(22, 93, 255, 0.25);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
+  padding: 8px 10px;
+  font-size: 0.88rem;
+  color: var(--ink);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 100ms ease, transform 100ms ease;
+}
+
+.selection-hover-legend.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .loading-overlay {
   position: fixed;
   inset: 0;
@@ -296,11 +318,84 @@ body {
 }
 
 .viewer-canvas-wrap {
-  margin-top: 18px;
-  overflow: auto;
+  flex: 1;
+  min-width: 0;
+  overflow: visible;
   border-radius: 18px;
   background: linear-gradient(180deg, #fdfefe 0%, #eef4fb 100%);
   border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.viewer-canvas-row {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.channel-filter-panel {
+  width: 220px;
+  min-width: 220px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.channel-filter-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.channel-filter-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.channel-filter-all input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--blue);
+}
+
+.channel-filter-list {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.channel-filter-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.channel-filter-item input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--blue);
+}
+
+.channel-filter-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #eeg-canvas {
@@ -321,6 +416,57 @@ body {
   color: var(--muted);
 }
 
+.page-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.page-button {
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(22, 93, 255, 0.22);
+  background: var(--panel-strong);
+  color: var(--ink);
+  font: inherit;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease;
+}
+
+.page-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(11, 62, 168, 0.45);
+}
+
+.page-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.page-shortcuts {
+  color: var(--muted);
+  font-size: 0.9rem;
+  border: 1px dashed rgba(15, 23, 42, 0.16);
+  border-radius: 12px;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
 input[type="range"] {
   width: 100%;
   accent-color: var(--blue);
@@ -329,14 +475,21 @@ input[type="range"] {
 .sidebar-card {
   padding: 22px;
   display: grid;
-  gap: 22px;
+  gap: 14px;
+  align-content: start;
+}
+
+.sidebar-card > section {
+  border: 1px dashed rgba(15, 23, 42, 0.2);
+  border-radius: 12px;
+  padding: 10px;
 }
 
 .section-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .metadata-grid {
@@ -386,6 +539,27 @@ input[type="range"] {
   display: block;
 }
 
+.selection-actions {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.selection-jump {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.selection-jump:hover {
+  color: var(--blue-deep);
+}
+
 .selection-item button {
   border: 0;
   border-radius: 10px;
@@ -394,6 +568,11 @@ input[type="range"] {
   font: inherit;
   cursor: pointer;
   padding: 0 12px;
+}
+
+.selection-item .selection-rename {
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--muted);
 }
 
 .activity-item {

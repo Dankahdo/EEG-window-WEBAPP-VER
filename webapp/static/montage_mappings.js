@@ -1,0 +1,48 @@
+window.EEG_MONTAGE_CONFIG = {
+  defaultMontageId: "raw_referential",
+  montages: [
+    {
+      id: "raw_referential",
+      label: "Raw Referential",
+      type: "raw",
+    },
+    {
+      id: "double_banana",
+      label: "Double Banana",
+      type: "bipolar",
+      pairs: [
+        { name: "Fp1-F7", from: ["Fp1"], to: ["F7"] },
+        { name: "F7-T3", from: ["F7"], to: ["T3", "T7"] },
+        { name: "T3-T5", from: ["T3", "T7"], to: ["T5", "P7"] },
+        { name: "T5-O1", from: ["T5", "P7"], to: ["O1"] },
+        { name: "Fp2-F8", from: ["Fp2"], to: ["F8"] },
+        { name: "F8-T4", from: ["F8"], to: ["T4", "T8"] },
+        { name: "T4-T6", from: ["T4", "T8"], to: ["T6", "P8"] },
+        { name: "T6-O2", from: ["T6", "P8"], to: ["O2"] },
+        { name: "Fp1-F3", from: ["Fp1"], to: ["F3"] },
+        { name: "F3-C3", from: ["F3"], to: ["C3"] },
+        { name: "C3-P3", from: ["C3"], to: ["P3"] },
+        { name: "P3-O1", from: ["P3"], to: ["O1"] },
+        { name: "Fp2-F4", from: ["Fp2"], to: ["F4"] },
+        { name: "F4-C4", from: ["F4"], to: ["C4"] },
+        { name: "C4-P4", from: ["C4"], to: ["P4"] },
+        { name: "P4-O2", from: ["P4"], to: ["O2"] },
+      ],
+    },
+    {
+      id: "longitudinal_bipolar",
+      label: "Longitudinal Bipolar",
+      type: "bipolar",
+      pairs: [
+        { name: "Fp1-F3", from: ["Fp1"], to: ["F3"] },
+        { name: "F3-C3", from: ["F3"], to: ["C3"] },
+        { name: "C3-P3", from: ["C3"], to: ["P3"] },
+        { name: "P3-O1", from: ["P3"], to: ["O1"] },
+        { name: "Fp2-F4", from: ["Fp2"], to: ["F4"] },
+        { name: "F4-C4", from: ["F4"], to: ["C4"] },
+        { name: "C4-P4", from: ["C4"], to: ["P4"] },
+        { name: "P4-O2", from: ["P4"], to: ["O2"] },
+      ],
+    },
+  ],
+};
