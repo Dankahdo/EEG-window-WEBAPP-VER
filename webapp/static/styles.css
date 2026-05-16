@@ -52,6 +52,89 @@ body {
   transform: translateY(0);
 }
 
+.page-jump-hover-legend {
+  border-color: rgba(11, 62, 168, 0.24);
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+  font-size: 0.82rem;
+}
+
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: transparent;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 180ms ease, visibility 180ms ease;
+}
+
+.tour-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+}
+
+.tour-spotlight {
+  position: fixed;
+  z-index: 1301;
+  pointer-events: none;
+  border-radius: 14px;
+  box-shadow: none;
+  opacity: 0;
+  transition: left 160ms ease, top 160ms ease, width 160ms ease, height 160ms ease, opacity 120ms ease;
+}
+
+.tour-overlay.active .tour-spotlight {
+  opacity: 1;
+}
+
+.tour-card {
+  position: fixed;
+  z-index: 1303;
+  width: min(420px, calc(100vw - 24px));
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 55px rgba(6, 10, 18, 0.4);
+  padding: 14px;
+}
+
+.tour-step {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--blue-deep);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tour-body {
+  margin-bottom: 12px;
+}
+
+.tour-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.toolbar-button.info {
+  background: rgba(11, 62, 168, 0.1);
+  color: var(--blue-deep);
+  border-color: rgba(11, 62, 168, 0.24);
+}
+
+.tour-highlight {
+  position: relative;
+  z-index: 1302 !important;
+  box-shadow: 0 0 0 3px rgba(62, 163, 255, 0.98), 0 0 0 12px rgba(62, 163, 255, 0.42), 0 12px 30px rgba(62, 163, 255, 0.28);
+  border-radius: 12px;
+  filter: brightness(1.18) saturate(1.1);
+}
+
 .loading-overlay {
   position: fixed;
   inset: 0;
@@ -244,6 +327,25 @@ body {
 .control-chip select:hover {
   transform: translateY(-1px);
   border-color: rgba(11, 62, 168, 0.4);
+}
+
+.control-chip .control-input {
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(22, 93, 255, 0.18);
+  background: var(--panel-strong);
+  color: var(--ink);
+  padding: 0 12px;
+  font: inherit;
+}
+
+.control-chip .control-input:focus {
+  outline: 2px solid rgba(22, 93, 255, 0.35);
+  outline-offset: 1px;
+}
+
+.row-spacing-custom-input {
+  width: 92px;
 }
 
 .toolbar-button.primary {
@@ -450,12 +552,53 @@ body {
   min-height: 42px;
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   padding: 0 14px;
   border-radius: 12px;
   border: 1px solid rgba(15, 23, 42, 0.1);
   background: rgba(255, 255, 255, 0.84);
   color: var(--muted);
   font-weight: 700;
+}
+
+.page-indicator-jump {
+  margin: 0;
+}
+
+.page-indicator-prefix,
+.page-indicator-divider {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.page-indicator-input {
+  width: 66px;
+  min-height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  padding: 0 8px;
+  font: inherit;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink);
+  background: #fff;
+}
+
+.page-indicator-input:focus {
+  outline: 2px solid rgba(22, 93, 255, 0.35);
+  outline-offset: 1px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .page-shortcuts {
@@ -539,6 +682,11 @@ input[type="range"] {
   display: block;
 }
 
+.selection-item.locked {
+  border-color: rgba(22, 93, 255, 0.35);
+  background: rgba(22, 93, 255, 0.08);
+}
+
 .selection-actions {
   display: inline-flex;
   gap: 8px;
@@ -570,9 +718,19 @@ input[type="range"] {
   padding: 0 12px;
 }
 
+.selection-item .selection-lock {
+  background: rgba(22, 93, 255, 0.12);
+  color: var(--blue-deep);
+}
+
 .selection-item .selection-rename {
   background: rgba(15, 23, 42, 0.08);
   color: var(--muted);
+}
+
+.selection-item button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .activity-item {
@@ -609,5 +767,10 @@ input[type="range"] {
 
   .metadata-grid {
     grid-template-columns: 1fr;
+  }
+
+  .page-indicator {
+    padding-left: 10px;
+    padding-right: 10px;
   }
 }

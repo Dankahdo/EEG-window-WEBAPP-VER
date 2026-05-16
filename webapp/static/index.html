@@ -31,7 +31,6 @@
           </div>
           <div class="hero-status">
             <span class="status-pill" id="backend-status">Checking backend</span>
-            <span class="status-pill muted" id="dataset-status">No dataset loaded</span>
           </div>
         </div>
       </header>
@@ -44,6 +43,7 @@
           <button class="toolbar-button" id="export-edf-segments-btn">Export EDF Segments</button>
           <button class="toolbar-button success" id="export-clips-btn">Export Clips</button>
           <button class="toolbar-button warning" id="clear-selection-btn">Clear Selections</button>
+          <button class="toolbar-button info" id="start-tour-btn">Guide</button>
           <input type="file" id="json-input" accept=".json,application/json" hidden />
           <input type="file" id="edf-input" accept=".edf" hidden />
         </div>
@@ -89,7 +89,20 @@
               <option value="80">Compact</option>
               <option value="110" selected>Normal</option>
               <option value="140">Wide</option>
+              <option value="custom">Custom</option>
             </select>
+            <input
+              id="row-spacing-custom-input"
+              class="control-input row-spacing-custom-input"
+              type="number"
+              min="50"
+              max="260"
+              step="1"
+              inputmode="numeric"
+              value="110"
+              aria-label="Custom row spacing"
+              hidden
+            />
           </label>
           <label class="control-chip">
             <span>EDF Segments</span>
@@ -117,7 +130,22 @@
           </div>
           <div class="page-controls" id="page-controls" aria-label="Time pages">
             <button class="page-button" id="page-prev-btn" type="button">Previous Page</button>
-            <span class="page-indicator" id="page-indicator">Page 1 / 1</span>
+            <form class="page-indicator page-indicator-jump" id="page-indicator-form" aria-label="Current page">
+              <label class="visually-hidden" for="page-indicator-input">Page number</label>
+              <span class="page-indicator-prefix">Page</span>
+              <input
+                class="page-indicator-input"
+                id="page-indicator-input"
+                type="number"
+                min="1"
+                step="1"
+                inputmode="numeric"
+                value="1"
+                aria-label="Page number"
+              />
+              <span class="page-indicator-divider">/</span>
+              <span id="page-indicator-total">1</span>
+            </form>
             <button class="page-button" id="page-next-btn" type="button">Next Page</button>
             <span class="page-shortcuts">Shortcuts: A / D / Left Arrow / Right Arrow</span>
           </div>
@@ -179,15 +207,33 @@
 
           <section>
             <h3>Activity</h3>
-            <div class="activity-log" id="activity-log"></div>
+            <div class="activity-log" id="activity-log">
+              <p class="empty-state activity-empty-state">No activity yet.</p>
+            </div>
           </section>
         </aside>
       </section>
     </div>
 
+    <div class="tour-overlay" id="tour-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+      <div class="tour-spotlight" id="tour-spotlight" aria-hidden="true"></div>
+      <div class="tour-card" id="tour-card">
+        <p class="tour-step" id="tour-step-label">Step 1 / 1</p>
+        <h3 id="tour-title">Welcome</h3>
+        <p class="tour-body" id="tour-body">This guide will walk you through the main controls.</p>
+        <div class="tour-actions">
+          <button class="toolbar-button" id="tour-prev-btn" type="button">Back</button>
+          <button class="toolbar-button primary" id="tour-next-btn" type="button">Next</button>
+          <button class="toolbar-button warning" id="tour-close-btn" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+
     <div id="selection-hover-legend" class="selection-hover-legend" aria-hidden="true"></div>
+    <div id="page-jump-hover-legend" class="selection-hover-legend page-jump-hover-legend" aria-hidden="true"></div>
 
     <script src="/static/montage_mappings.js?v=20260516a"></script>
-    <script src="/static/app.js?v=20260516b"></script>
+    <script src="/static/app.js?v=20260516e"></script>
+    <script src="/static/tour.js?v=20260516a"></script>
   </body>
   </html>

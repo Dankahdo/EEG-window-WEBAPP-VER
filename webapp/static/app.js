@@ -29,12 +29,15 @@ const datasetStatus = document.getElementById("dataset-status");
 const backendStatus = document.getElementById("backend-status");
 const pagePrevBtn = document.getElementById("page-prev-btn");
 const pageNextBtn = document.getElementById("page-next-btn");
-const pageIndicator = document.getElementById("page-indicator");
+const pageIndicatorForm = document.getElementById("page-indicator-form");
+const pageIndicatorInput = document.getElementById("page-indicator-input");
+const pageIndicatorTotal = document.getElementById("page-indicator-total");
 const visibleCountSelect = document.getElementById("visible-count-select");
 const montageSelect = document.getElementById("montage-select");
 const windowSecondsSelect = document.getElementById("window-seconds-select");
 const amplitudeScaleSelect = document.getElementById("amplitude-scale-select");
 const rowSpacingSelect = document.getElementById("row-spacing-select");
+const rowSpacingCustomInput = document.getElementById("row-spacing-custom-input");
 const segmentDurationSelect = document.getElementById("segment-duration-select");
 const channelFilterAll = document.getElementById("channel-filter-all");
 const channelFilterList = document.getElementById("channel-filter-list");
@@ -47,9 +50,11 @@ const channelWindowLabel = document.getElementById("channel-window-label");
 const loadingOverlay = document.getElementById("loading-overlay");
 const loadingMessage = document.getElementById("loading-message");
 const selectionHoverLegend = document.getElementById("selection-hover-legend");
+const pageJumpHoverLegend = document.getElementById("page-jump-hover-legend");
 const visibleCountChip = visibleCountSelect?.closest(".control-chip");
 
 let loadingTaskCount = 0;
+let pageJumpHintTimerId = null;
 
 const layout = {
   top: 36,
@@ -58,13 +63,52 @@ const layout = {
   left: 110,
 };
 
+const ROW_SPACING_MIN = 50;
+const ROW_SPACING_MAX = 260;
+
+function clampRowSpacing(value) {
+  return Math.max(ROW_SPACING_MIN, Math.min(ROW_SPACING_MAX, Math.round(Number(value) || state.rowSpacing)));
+}
+
+function syncRowSpacingControls() {
+  if (!rowSpacingSelect) {
+    return;
+  }
+
+  const isCustom = rowSpacingSelect.value === "custom";
+  if (rowSpacingCustomInput) {
+    rowSpacingCustomInput.hidden = !isCustom;
+    rowSpacingCustomInput.disabled = !isCustom;
+    rowSpacingCustomInput.value = String(clampRowSpacing(rowSpacingCustomInput.value));
+  }
+}
+
+function applyRowSpacing(value) {
+  const nextSpacing = clampRowSpacing(value);
+  state.rowSpacing = nextSpacing;
+  if (rowSpacingCustomInput) {
+    rowSpacingCustomInput.value = String(nextSpacing);
+  }
+  render();
+}
+
 function addLog(message) {
+  const emptyState = activityLog.querySelector(".activity-empty-state");
+  if (emptyState) {
+    emptyState.remove();
+  }
+
   const item = document.createElement("div");
   item.className = "activity-item";
   item.textContent = `${new Date().toLocaleTimeString()}  ${message}`;
   activityLog.prepend(item);
-  while (activityLog.childElementCount > 8) {
-    activityLog.removeChild(activityLog.lastChild);
+
+  while (true) {
+    const items = [...activityLog.querySelectorAll(".activity-item")];
+    if (items.length <= 8) {
+      break;
+    }
+    items[items.length - 1].remove();
   }
 }
 
@@ -312,8 +356,8 @@ function updatePageControls() {
   const pageCount = getPageCount();
   const maxPage = Math.max(0, pageCount - 1);
 
-  if (pageIndicator) {
-    pageIndicator.textContent = `Page ${state.currentPage + 1} / ${pageCount}`;
+  if (pageIndicatorTotal) {
+    pageIndicatorTotal.textContent = String(pageCount);
   }
 
   if (pagePrevBtn) {
@@ -323,21 +367,44 @@ function updatePageControls() {
   if (pageNextBtn) {
     pageNextBtn.disabled = state.currentPage >= maxPage;
   }
+
+  if (pageIndicatorInput) {
+    pageIndicatorInput.min = "1";
+    pageIndicatorInput.max = String(pageCount);
+    pageIndicatorInput.value = String(state.currentPage + 1);
+    pageIndicatorInput.disabled = !state.eegData;
+  }
+}
+
+function goToPage(pageNumber) {
+  const pageCount = getPageCount();
+  const maxPage = Math.max(0, pageCount - 1);
+  const maxTimeStart = Math.max(0, getDurationSeconds() - state.windowSeconds);
+
+  const pageNumberValue = Number(pageNumber);
+  if (!Number.isFinite(pageNumberValue)) {
+    return false;
+  }
+
+  const requestedIndex = Math.round(pageNumberValue) - 1;
+  const clampedPage = Math.max(0, Math.min(maxPage, requestedIndex));
+  state.currentPage = clampedPage;
+  state.viewStart = getPageStart(state.currentPage, maxTimeStart);
+
+  if (pageIndicatorInput) {
+    pageIndicatorInput.value = String(state.currentPage + 1);
+  }
+
+  render();
+  return true;
 }
 
 function goToPreviousPage() {
-  const maxTimeStart = Math.max(0, getDurationSeconds() - state.windowSeconds);
-  state.currentPage = Math.max(0, state.currentPage - 1);
-  state.viewStart = getPageStart(state.currentPage, maxTimeStart);
-  render();
+  goToPage(state.currentPage);
 }
 
 function goToNextPage() {
-  const maxTimeStart = Math.max(0, getDurationSeconds() - state.windowSeconds);
-  const maxPage = Math.max(0, getPageCount() - 1);
-  state.currentPage = Math.min(maxPage, state.currentPage + 1);
-  state.viewStart = getPageStart(state.currentPage, maxTimeStart);
-  render();
+  goToPage(state.currentPage + 2);
 }
 
 function isTypingTarget(target) {
@@ -484,24 +551,47 @@ function updateSelectionList() {
     return;
   }
 
-  getSortedSelections().forEach(({ id, start, end, name }) => {
+  getSortedSelections().forEach(({ id, start, end, name, locked }) => {
       const item = document.createElement("div");
       item.className = "selection-item";
+      if (locked) {
+        item.classList.add("locked");
+      }
 
       const label = document.createElement("button");
       label.type = "button";
       label.className = "selection-jump";
       label.title = "Jump to clip page";
-      label.innerHTML = `<strong>${name}</strong><span>${roundTime(start)}s - ${roundTime(end)}s</span>`;
+      label.innerHTML = `<strong>${name}${locked ? " (Locked)" : ""}</strong><span>${roundTime(start)}s - ${roundTime(end)}s</span>`;
       label.addEventListener("click", () => {
         jumpToSelectionPage(id, start);
+      });
+
+      const lockButton = document.createElement("button");
+      lockButton.type = "button";
+      lockButton.className = "selection-lock";
+      lockButton.textContent = locked ? "Unlock" : "Lock";
+      lockButton.addEventListener("click", () => {
+        const selection = state.selections.find((entry) => entry.id === id);
+        if (!selection) {
+          return;
+        }
+        selection.locked = !selection.locked;
+        addLog(`${selection.name} ${selection.locked ? "locked" : "unlocked"}.`);
+        updateSelectionList();
+        render();
       });
 
       const renameButton = document.createElement("button");
       renameButton.type = "button";
       renameButton.className = "selection-rename";
       renameButton.textContent = "Rename";
+      renameButton.disabled = Boolean(locked);
+      renameButton.title = locked ? "Unlock this clip to rename it." : "";
       renameButton.addEventListener("click", () => {
+        if (locked) {
+          return;
+        }
         const nextNameRaw = window.prompt("Enter a new clip name:", name);
         if (nextNameRaw === null) {
           return;
@@ -522,7 +612,12 @@ function updateSelectionList() {
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = "Remove";
+      button.disabled = Boolean(locked);
+      button.title = locked ? "Unlock this clip to remove it." : "";
       button.addEventListener("click", () => {
+        if (locked) {
+          return;
+        }
         state.selections = state.selections.filter((selection) => selection.id !== id);
         updateSelectionList();
         render();
@@ -530,7 +625,7 @@ function updateSelectionList() {
 
       const actions = document.createElement("div");
       actions.className = "selection-actions";
-      actions.append(renameButton, button);
+      actions.append(lockButton, renameButton, button);
 
       item.append(label, actions);
       selectionList.append(item);
@@ -595,6 +690,53 @@ function showSelectionHoverLegend(content, clientX, clientY) {
   selectionHoverLegend.style.top = `${top}px`;
 }
 
+function hidePageJumpHoverLegend() {
+  if (!pageJumpHoverLegend) {
+    return;
+  }
+  pageJumpHoverLegend.classList.remove("active");
+  pageJumpHoverLegend.setAttribute("aria-hidden", "true");
+}
+
+function clearPageJumpHintTimer() {
+  if (pageJumpHintTimerId !== null) {
+    window.clearTimeout(pageJumpHintTimerId);
+    pageJumpHintTimerId = null;
+  }
+}
+
+function showPageJumpHoverLegend() {
+  if (!pageJumpHoverLegend || !pageIndicatorForm) {
+    return;
+  }
+
+  pageJumpHoverLegend.textContent = "Tip: Hover here and scroll mouse wheel to move pages.";
+  pageJumpHoverLegend.classList.add("active");
+  pageJumpHoverLegend.setAttribute("aria-hidden", "false");
+
+  const rect = pageIndicatorForm.getBoundingClientRect();
+  const padding = 12;
+  const legendRect = pageJumpHoverLegend.getBoundingClientRect();
+  let left = rect.left + rect.width / 2 - legendRect.width / 2;
+  let top = rect.bottom + 10;
+
+  if (left + legendRect.width + padding > window.innerWidth) {
+    left = window.innerWidth - legendRect.width - padding;
+  }
+  if (left < padding) {
+    left = padding;
+  }
+  if (top + legendRect.height + padding > window.innerHeight) {
+    top = rect.top - legendRect.height - 10;
+  }
+  if (top < padding) {
+    top = padding;
+  }
+
+  pageJumpHoverLegend.style.left = `${left}px`;
+  pageJumpHoverLegend.style.top = `${top}px`;
+}
+
 function updateSelectionHoverLegend(localX, localY, clientX, clientY) {
   if (!state.eegData || state.selections.length === 0 || state.dragSelection) {
     hideSelectionHoverLegend();
@@ -649,7 +791,9 @@ function setDataset(data, fileName, sourceLabel) {
   syncControls();
   updateMetadata();
   updateSelectionList();
-  datasetStatus.textContent = `${sourceLabel}: ${fileName}`;
+  if (datasetStatus) {
+    datasetStatus.textContent = fileName;
+  }
   addLog(`Loaded ${fileName} from ${sourceLabel}.`);
   render();
   scheduleStabilizedRender();
@@ -983,9 +1127,22 @@ document.getElementById("export-clips-btn").addEventListener("click", async () =
 });
 
 document.getElementById("clear-selection-btn").addEventListener("click", () => {
-  state.selections = [];
+  const before = state.selections.length;
+  if (before === 0) {
+    return;
+  }
+
+  state.selections = state.selections.filter((selection) => selection.locked);
+  const removed = before - state.selections.length;
+
   updateSelectionList();
-  addLog("Cleared all selections.");
+  if (removed === 0) {
+    addLog("All clips are locked. Nothing was cleared.");
+  } else if (state.selections.length > 0) {
+    addLog(`Cleared ${removed} unlocked clip${removed === 1 ? "" : "s"}. Kept ${state.selections.length} locked clip${state.selections.length === 1 ? "" : "s"}.`);
+  } else {
+    addLog("Cleared all selections.");
+  }
   render();
 });
 
@@ -1040,9 +1197,26 @@ amplitudeScaleSelect.addEventListener("change", () => {
 });
 
 rowSpacingSelect.addEventListener("change", () => {
-  state.rowSpacing = Number(rowSpacingSelect.value);
-  render();
+  const nextValue = rowSpacingSelect.value;
+  syncRowSpacingControls();
+
+  if (nextValue === "custom") {
+    applyRowSpacing(rowSpacingCustomInput?.value ?? state.rowSpacing);
+    return;
+  }
+
+  applyRowSpacing(nextValue);
 });
+
+if (rowSpacingCustomInput) {
+  rowSpacingCustomInput.addEventListener("change", () => {
+    applyRowSpacing(rowSpacingCustomInput.value);
+  });
+
+  rowSpacingCustomInput.addEventListener("blur", () => {
+    applyRowSpacing(rowSpacingCustomInput.value);
+  });
+}
 
 if (pagePrevBtn) {
   pagePrevBtn.addEventListener("click", goToPreviousPage);
@@ -1050,6 +1224,82 @@ if (pagePrevBtn) {
 
 if (pageNextBtn) {
   pageNextBtn.addEventListener("click", goToNextPage);
+}
+
+if (pageIndicatorForm) {
+  pageIndicatorForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!state.eegData || !pageIndicatorInput) {
+      return;
+    }
+
+    const raw = pageIndicatorInput.value.trim();
+    if (!raw) {
+      pageIndicatorInput.value = String(state.currentPage + 1);
+      return;
+    }
+
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) {
+      pageIndicatorInput.value = String(state.currentPage + 1);
+      return;
+    }
+
+    goToPage(parsed);
+  });
+}
+
+if (pageIndicatorInput) {
+  pageIndicatorInput.addEventListener("blur", () => {
+    if (!state.eegData) {
+      return;
+    }
+    goToPage(pageIndicatorInput.value);
+  });
+
+  pageIndicatorInput.addEventListener("focus", () => {
+    pageIndicatorInput.select();
+  });
+
+  pageIndicatorInput.addEventListener("wheel", (event) => {
+    if (!state.eegData) {
+      return;
+    }
+
+    event.preventDefault();
+    if (event.deltaY < 0) {
+      goToPreviousPage();
+      return;
+    }
+    if (event.deltaY > 0) {
+      goToNextPage();
+    }
+  }, { passive: false });
+}
+
+if (pageIndicatorForm) {
+  const schedulePageJumpHint = () => {
+    clearPageJumpHintTimer();
+    pageJumpHintTimerId = window.setTimeout(() => {
+      pageJumpHintTimerId = null;
+      showPageJumpHoverLegend();
+    }, 3000);
+  };
+
+  const cancelPageJumpHint = () => {
+    clearPageJumpHintTimer();
+    hidePageJumpHoverLegend();
+  };
+
+  pageIndicatorForm.addEventListener("mouseenter", schedulePageJumpHint);
+  pageIndicatorForm.addEventListener("mouseleave", cancelPageJumpHint);
+  pageIndicatorForm.addEventListener("focusin", schedulePageJumpHint);
+  pageIndicatorForm.addEventListener("focusout", (event) => {
+    if (pageIndicatorForm.contains(event.relatedTarget)) {
+      return;
+    }
+    cancelPageJumpHint();
+  });
 }
 
 window.addEventListener("keydown", (event) => {
@@ -1147,6 +1397,7 @@ window.addEventListener("mouseup", () => {
     name: `Clip ${state.nextSelectionId}`,
     start: Math.min(startTime, endTime),
     end: Math.max(startTime, endTime),
+    locked: false,
   };
   state.nextSelectionId += 1;
   state.selections.push(selection);
@@ -1162,6 +1413,7 @@ if (visibleCountChip) {
 }
 
 populateMontageSelect();
+syncRowSpacingControls();
 renderChannelFilters();
 checkBackend();
 updateMetadata();
