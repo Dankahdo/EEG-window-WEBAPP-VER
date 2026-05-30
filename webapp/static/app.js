@@ -194,7 +194,21 @@ function getDisplayChannelData(channelName) {
 }
 
 function normalizeChannelName(name) {
-  return String(name || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let s = String(name || "").trim();
+  // Strip common EEG modality prefix (e.g. "EEG Fp1-Cz" → "Fp1-Cz")
+  s = s.replace(/^(EEG|EMG|EOG|ECG|EKG)\s+/i, "");
+  // Handle "Electrode-Reference" format: if there is a hyphen and the part before it
+  // matches a standard 10-20 electrode name pattern (1-4 letters + optional digit/z),
+  // keep only the electrode name and discard the reference suffix.
+  // Handles: "Fp1-Cz", "Fp1-REF", "Fp1-LE", "Fp1-A1", "T3-Cz", etc.
+  const hyphenIdx = s.indexOf("-");
+  if (hyphenIdx > 0) {
+    const beforeHyphen = s.slice(0, hyphenIdx);
+    if (/^[A-Za-z]{1,4}[0-9z]{0,2}$/i.test(beforeHyphen)) {
+      s = beforeHyphen;
+    }
+  }
+  return s.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
 function buildSourceChannelMap(data) {
@@ -625,7 +639,16 @@ function updateSelectionList() {
 
       const actions = document.createElement("div");
       actions.className = "selection-actions";
-      actions.append(lockButton, renameButton, button);
+      const downloadButton = document.createElement("button");
+      downloadButton.type = "button";
+      downloadButton.className = "selection-download";
+      downloadButton.title = `Download ${name} as JSON`;
+      downloadButton.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M7 1v7.5M7 8.5l-2.5-2.5M7 8.5l2.5-2.5M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      downloadButton.addEventListener("click", () => {
+        downloadSingleClip(id, start, end, name);
+      });
+
+      actions.append(lockButton, renameButton, downloadButton, button);
 
       item.append(label, actions);
       selectionList.append(item);
@@ -1022,7 +1045,7 @@ async function convertEdf(action) {
   const actionLabel = action === "preview"
     ? "Opening EDF file..."
     : action === "segments"
-      ? "Exporting EDF segments..."
+      ? "Splitting EDF into chunks..."
       : "Exporting EDF as JSON...";
   beginLoading(actionLabel);
 
@@ -1055,10 +1078,44 @@ async function convertEdf(action) {
     updateLoadingMessage("Preparing download...");
     const blob = await response.blob();
     const filename = action === "segments"
-      ? file.name.replace(/\.edf$/i, "_segments.zip")
+      ? file.name.replace(/\.edf$/i, "_chunks.zip")
       : file.name.replace(/\.edf$/i, ".json");
     downloadBlob(blob, filename);
     addLog(`Downloaded ${filename}.`);
+  } finally {
+    endLoading();
+  }
+}
+
+async function downloadSingleClip(id, start, end, clipName) {
+  if (!state.eegData) {
+    addLog("No dataset loaded.");
+    return;
+  }
+
+  beginLoading(`Downloading ${clipName}...`);
+  try {
+    await nextFrame();
+    const response = await fetch("/api/clips/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eeg_data: state.eegData,
+        selections: [[start, end]],
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: "Clip export failed." }));
+      throw new Error(error.detail || "Clip export failed.");
+    }
+
+    const blob = await response.blob();
+    const safeName = clipName.replace(/[^a-zA-Z0-9_\-]/g, "_");
+    downloadBlob(blob, `${safeName}.zip`);
+    addLog(`Downloaded ${clipName}.`);
+  } catch (err) {
+    addLog(`Download failed: ${err.message}`);
   } finally {
     endLoading();
   }

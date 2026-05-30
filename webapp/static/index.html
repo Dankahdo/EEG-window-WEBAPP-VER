@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EEG Clipper Webapp</title>
-    <link rel="stylesheet" href="/static/styles.css?v=20260516a" />
+    <link rel="stylesheet" href="/static/styles.css?v=20260530a" />
   </head>
   <body>
     <div class="loading-overlay" id="loading-overlay" aria-hidden="true">
@@ -40,7 +40,7 @@
           <button class="toolbar-button primary" id="load-json-btn">Load JSON</button>
           <button class="toolbar-button primary" id="preview-edf-btn">Open EDF</button>
           <button class="toolbar-button" id="export-edf-json-btn">Export EDF JSON</button>
-          <button class="toolbar-button" id="export-edf-segments-btn">Export EDF Segments</button>
+          <button class="toolbar-button" id="export-edf-segments-btn">Split EDF Into Chunks</button>
           <button class="toolbar-button success" id="export-clips-btn">Export Clips</button>
           <button class="toolbar-button warning" id="clear-selection-btn">Clear Selections</button>
           <button class="toolbar-button info" id="start-tour-btn">Guide</button>
@@ -104,8 +104,8 @@
               hidden
             />
           </label>
-          <label class="control-chip">
-            <span>EDF Segments</span>
+          <label class="control-chip" title="Used only when splitting the full EDF into fixed chunks.">
+            <span>Chunk Duration</span>
             <select id="segment-duration-select">
               <option value="30">30 s</option>
               <option value="60" selected>60 s</option>
@@ -234,7 +234,7 @@
     <div id="page-jump-hover-legend" class="selection-hover-legend page-jump-hover-legend" aria-hidden="true"></div>
 
     <script src="/static/montage_mappings.js?v=20260516a"></script>
-    <script src="/static/app.js?v=20260516e"></script>
+    <script src="/static/app.js?v=20260530d"></script>
     <script src="/static/tour.js?v=20260516a"></script>
   </body>
   </html>
