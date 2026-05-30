@@ -635,6 +635,13 @@ input[type="range"] {
   margin-bottom: 8px;
 }
 
+.section-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0 0 10px 0;
+  font-weight: 500;
+}
+
 .metadata-grid {
   margin: 14px 0 0;
   display: grid;

@@ -15,6 +15,22 @@ from .eeg_service import build_clips, json_bytes, parse_edf_bytes, segment_eeg_j
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "static"
 
+
+NO_CACHE_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
+
+class NoCacheStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        if getattr(response, "status_code", 200) == 200:
+            for header, value in NO_CACHE_HEADERS.items():
+                response.headers[header] = value
+        return response
+
 app = FastAPI(title="EEG Clipper Webapp")
 app.add_middleware(
     CORSMiddleware,
@@ -23,7 +39,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/static", NoCacheStaticFiles(directory=STATIC_DIR), name="static")
 
 
 class ClipExportRequest(BaseModel):
@@ -89,4 +105,4 @@ def export_clips(request: ClipExportRequest) -> StreamingResponse:
 
 @app.get("/")
 def serve_index() -> FileResponse:
-    return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(STATIC_DIR / "index.html", headers=NO_CACHE_HEADERS)
