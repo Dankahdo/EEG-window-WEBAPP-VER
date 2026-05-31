@@ -1,2 +1,6 @@
 # Local data assets (do not publish)
 Data/
+
+# Python bytecode/cache
+__pycache__/
+*.py[cod]
