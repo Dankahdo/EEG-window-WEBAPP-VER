@@ -1,0 +1,41 @@
+Cross-Page Artifact Selection: Proposed Solutions
+
+Context
+The current page/window navigation can split an artifact across page boundaries. Users can adjust window size as a workaround, but boundary misses can still occur.
+
+Proposed Solutions
+
+1) Page Overlap
+- Introduce overlap between consecutive pages (for example 15%-25%).
+- This makes boundary artifacts visible on both neighboring pages.
+- Keep the current page-based UI and waveform layout unchanged.
+
+2) Edge-Drag Auto-Pan Across Pages
+- While user is drag-selecting near the left or right edge of the plot, automatically move to previous/next page.
+- Keep the drag anchor in absolute time so one continuous selection can span multiple pages.
+- This allows natural cross-page clipping without manual page switches.
+
+3) Auto-Merge Adjacent/Overlapping Selections
+- Store selections in absolute time (already aligned with current model).
+- If two selections overlap or touch within a small threshold (for example 100-200 ms), merge them into one.
+- Prevents duplicate/fragmented clips caused by overlap or cross-page workflow.
+
+Recommended "Elegant" Combination (Minimal UI Change)
+- Enable overlap paging by default (for example 20%).
+- Add edge auto-pan during drag selection.
+- Add automatic merge of contiguous selections.
+
+Optional UX Refinement
+- Add a small toggle near Window controls: "Boundary Assist" (default On).
+- Tooltip text: "Overlaps pages and allows cross-page drag selection."
+- Keeps current form factor while making boundary handling explicit.
+
+Suggested Internal Logic
+- Page start time: N x windowSeconds x (1 - overlapRatio)
+- Page end time: pageStart + windowSeconds
+- Auto-pan trigger zone: last/first ~3%-5% of plot width while dragging
+- Merge rule: if next.start <= current.end + mergeThreshold, merge
+
+Notes
+- These ideas preserve the existing page/window interaction style.
+- No commitment yet; this document is for later review and consultation.
