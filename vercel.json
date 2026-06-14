@@ -3,6 +3,6 @@
   "rewrites": [
     { "source": "/", "destination": "/webapp/static/index.html" },
     { "source": "/static/(.*)", "destination": "/webapp/static/$1" },
-    { "source": "/api/(.*)", "destination": "https://YOUR-RENDER-URL/api/$1" }
+    { "source": "/api/(.*)", "destination": "https://eeg-window-webapp-ver.onrender.com/api/$1" }
   ]
 }
