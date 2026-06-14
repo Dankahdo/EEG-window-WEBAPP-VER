@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/static/index.html" },
+    { "source": "/api/(.*)", "destination": "https://YOUR-RENDER-URL/api/$1" }
+  ]
+}
